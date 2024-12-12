@@ -1,0 +1,220 @@
+package fig3
+public
+
+  -- Déclaration des composants système
+  system ObstacleDetectionSystem
+  end ObstacleDetectionSystem;
+
+  system implementation ObstacleDetectionSystem.impl
+    subcomponents
+      wheel_sensor: device WheelSensor.impl;
+      law_sensor: device LawSensor.impl;
+      radar_acquisition: device RadarAcquisition.impl;
+      obstacle_radar: device ObstacleRadar.impl;
+      obstacle_camera: device ObstacleCamera.impl;
+      image_acquisition: device ImageAcquisition.impl;
+      obstacle_detection: process ObstacleDetection.impl;
+      obstacle_distance_evaluation: process ObstacleDistanceEvaluation.impl;
+      gps1: device GPS.impl;
+      gps2: device GPS.impl;
+      position_voter: process PositionVoter.impl;
+      speed_controller: process SpeedController.impl;
+      speed_threshold_calculation: process SpeedThresholdCalculation.impl;
+      emergency_detection: process EmergencyDetection.impl;
+      warning_activation: process WarningActivation.impl;
+      warning_alert: device WarningAlert.impl;
+      ecu1: device ECU.impl;
+      ecu2: device ECU.impl;
+      acceleration: device Acceleration.impl;
+      brake: device Brake.impl;
+    connections
+      -- Connexions entre les composants
+      C1: port wheel_sensor.speed -> speed_controller.current_speed;
+      C2: port law_sensor.speed -> speed_controller.current_speed;
+      C3: port radar_acquisition.obstacle_distance -> obstacle_distance_evaluation.obstacle_distance;
+      C4: port obstacle_radar.distance_estimate -> obstacle_distance_evaluation.obstacle_distance;
+      C5: port obstacle_camera.picture -> image_acquisition.picture_in;
+      C6: port image_acquisition.obstacle_detected -> obstacle_detection.obstacle_detected;
+      C7: port radar_acquisition.obstacle_distance -> obstacle_detection.radar_in;
+      C8: port obstacle_camera.picture -> obstacle_detection.camera_in;
+      C9: port obstacle_detection.obstacle_detected -> obstacle_distance_evaluation.obstacle_detected;
+      C10: port obstacle_distance_evaluation.current_speed -> emergency_detection.current_speed;
+      C11: port obstacle_distance_evaluation.obstacle_distance -> emergency_detection.obstacle_distance;
+      C12: port gps1.position -> position_voter.position1;
+      C13: port gps2.position -> position_voter.position2;
+      C14: port position_voter.position -> speed_threshold_calculation.position;
+      C15: port speed_controller.position -> speed_threshold_calculation.position;
+      C16: port speed_controller.threshold -> speed_threshold_calculation.threshold;
+      C17: port speed_threshold_calculation.current_speed -> speed_controller.current_speed;
+      C18: port emergency_detection.current_speed -> speed_controller.current_speed;
+      C19: port emergency_detection.obstacle_distance -> speed_controller.threshold;
+      C20: port emergency_detection.emergency_detected -> warning_activation.emergency_detected;
+      C21: port warning_activation.activate_warning -> warning_alert.warning_alert;
+      C22: port ecu1.can -> speed_controller.cmd;
+      C23: port ecu2.can -> speed_controller.cmd;
+      C24: port acceleration.cmd -> speed_controller.cmd;
+      C25: port brake.cmd -> speed_controller.cmd;
+    end ObstacleDetectionSystem.impl;
+
+  -- Définition des composants
+  device WheelSensor
+  end WheelSensor;
+
+  device implementation WheelSensor.impl
+    features
+      speed: out data port;
+  end WheelSensor.impl;
+
+  device LawSensor
+  end LawSensor;
+
+  device implementation LawSensor.impl
+    features
+      speed: out data port;
+  end LawSensor.impl;
+
+  device RadarAcquisition
+  end RadarAcquisition;
+
+  device implementation RadarAcquisition.impl
+    features
+      obstacle_distance: out data port;
+  end RadarAcquisition.impl;
+
+  device ObstacleRadar
+  end ObstacleRadar;
+
+  device implementation ObstacleRadar.impl
+    features
+      distance_estimate: out data port;
+  end ObstacleRadar.impl;
+
+  device ObstacleCamera
+  end ObstacleCamera;
+
+  device implementation ObstacleCamera.impl
+    features
+      picture: out data port;
+  end ObstacleCamera.impl;
+
+  device ImageAcquisition
+  end ImageAcquisition;
+
+  device implementation ImageAcquisition.impl
+    features
+      picture_in: in data port;
+      obstacle_detected: out data port;
+  end ImageAcquisition.impl;
+
+  process ObstacleDetection
+  end ObstacleDetection;
+
+  process implementation ObstacleDetection.impl
+    features
+      radar_in: in data port;
+      camera_in: in data port;
+      obstacle_detected: out data port;
+  end ObstacleDetection.impl;
+
+  process ObstacleDistanceEvaluation
+  end ObstacleDistanceEvaluation;
+
+  process implementation ObstacleDistanceEvaluation.impl
+    features
+      current_speed: in data port;
+      obstacle_distance: in data port;
+      obstacle_detected: in data port;
+  end ObstacleDistanceEvaluation.impl;
+
+  device GPS
+  end GPS;
+
+  device implementation GPS.impl
+    features
+      position: out data port;
+  end GPS.impl;
+
+  process PositionVoter
+  end PositionVoter;
+
+  process implementation PositionVoter.impl
+    features
+      position1: in data port;
+      position2: in data port;
+      position: out data port;
+  end PositionVoter.impl;
+
+  process SpeedController
+  end SpeedController;
+
+  process implementation SpeedController.impl
+    features
+      position: in data port;
+      threshold: in data port;
+      current_speed: in data port;
+      emergency_detected: in data port;
+      cmd: out data port;
+  end SpeedController.impl;
+
+  process SpeedThresholdCalculation
+  end SpeedThresholdCalculation;
+
+  process implementation SpeedThresholdCalculation.impl
+    features
+      position: in data port;
+      current_speed: in data port;
+      threshold: out data port;
+  end SpeedThresholdCalculation.impl;
+
+  process EmergencyDetection
+  end EmergencyDetection;
+
+  process implementation EmergencyDetection.impl
+    features
+      current_speed: in data port;
+      obstacle_distance: in data port;
+      emergency_detected: out data port;
+  end EmergencyDetection.impl;
+
+  process WarningActivation
+  end WarningActivation;
+
+  process implementation WarningActivation.impl
+    features
+      emergency_detected: in data port;
+      activate_warning: out data port;
+  end WarningActivation.impl;
+
+  device WarningAlert
+  end WarningAlert;
+
+  device implementation WarningAlert.impl
+    features
+      warning_alert: out data port;
+  end WarningAlert.impl;
+
+  device ECU
+  end ECU;
+
+  device implementation ECU.impl
+    features
+      can: in out data port;
+  end ECU.impl;
+
+  device Acceleration
+  end Acceleration;
+
+  device implementation Acceleration.impl
+    features
+      cmd: in data port;
+  end Acceleration.impl;
+
+  device Brake
+  end Brake;
+
+  device implementation Brake.impl
+    features
+      cmd: in data port;
+  end Brake.impl;
+
+end fig3;
